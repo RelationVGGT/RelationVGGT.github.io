@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RelationVGGT: Visual Geometry Transformers for 3D Spatial Relation Segmentation</title>
+<meta name="description" content="RelationVGGT segments the object that satisfies a spatial relation with a given subject, consistently across multiple views, feed-forward and without camera poses. NeurIPS 2026.">
+<meta property="og:title" content="RelationVGGT (NeurIPS 2026)">
+<meta property="og:description" content="Visual Geometry Transformers for 3D Spatial Relation Segmentation">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ffffff; --ink:#1d2127; --muted:#5a626d; --faint:#8a929c; --rule:#e2e5e9; --wash:#f4f6f8;
+  --subject:#18a34a; --subject-bg:#dcf5e3; --subject-ink:#0d5c2a;
+  --target:#dc3b3b; --target-bg:#fde4e4; --target-ink:#8f1d1d;
+  --btn:#1d2127; --btn-ink:#ffffff; --code:#f4f6f8;
+  --rk1:#f8c1c1; --rk2:#fcd9b4; --rk3:#faf0a8; --pc-bg:#e7eaee;
+  --serif:"Source Serif 4","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171a; --ink:#e9ebee; --muted:#a3abb5; --faint:#7d8691; --rule:#2c3036; --wash:#1d2024;
+    --subject:#3ccf6e; --subject-bg:#113a22; --subject-ink:#9ff0bb;
+    --target:#ff6a6a; --target-bg:#431a1a; --target-ink:#ffc2c2;
+    --btn:#e9ebee; --btn-ink:#15171a; --code:#1d2024; color-scheme:dark;
+    --rk1:#5c2626; --rk2:#5a3c1e; --rk3:#4a4419; --pc-bg:#0e1013;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15171a; --ink:#e9ebee; --muted:#a3abb5; --faint:#7d8691; --rule:#2c3036; --wash:#1d2024;
+  --subject:#3ccf6e; --subject-bg:#113a22; --subject-ink:#9ff0bb;
+  --target:#ff6a6a; --target-bg:#431a1a; --target-ink:#ffc2c2;
+  --btn:#e9ebee; --btn-ink:#15171a; --code:#1d2024; color-scheme:dark;
+    --rk1:#5c2626; --rk2:#5a3c1e; --rk3:#4a4419; --pc-bg:#0e1013;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;position:relative;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.65}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit;text-decoration-color:var(--faint);text-underline-offset:3px}
+a:hover{text-decoration-color:currentColor}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:4px}
+
+.wrap{max-width:780px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px}
+.wide{max-width:1120px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px}
+
+/* Header */
+header{text-align:center;padding-top:72px;padding-bottom:28px}
+.venue{display:inline-block;font-size:14px;font-weight:500;letter-spacing:.01em;color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:3px 14px;margin-bottom:22px}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(44px,8vw,76px);line-height:1;letter-spacing:-.02em;margin:0 0 14px;font-variation-settings:"opsz" 60}
+.subtitle{font-family:var(--serif);font-weight:400;font-size:clamp(20px,2.6vw,27px);line-height:1.3;margin:0 auto 30px;max-width:22em;color:var(--ink)}
+.authors{font-size:18px;line-height:1.9;margin:0 auto 6px;max-width:44em}
+.authors a{text-decoration:none;border-bottom:1px solid var(--rule);white-space:nowrap}
+.authors a:hover{border-bottom-color:var(--ink)}
+.authors sup,.affils sup{font-size:.68em;margin-left:1px;color:var(--muted)}
+.authors .sep{display:inline-block;width:14px}
+.affils{font-size:15.5px;color:var(--muted);margin:4px 0 4px}
+.affils span{margin:0 10px;white-space:nowrap}
+.note{font-size:13.5px;color:var(--faint);margin:4px 0 0}
+.mail{display:inline-block;width:.9em;height:.9em;vertical-align:-.05em;margin-left:2px}
+
+.links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:30px 0 0;padding:0;list-style:none}
+.btn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:999px;background:var(--btn);color:var(--btn-ink);font-size:15.5px;font-weight:500;text-decoration:none;border:1px solid var(--btn)}
+.btn svg{width:18px;height:18px;flex:none}
+.btn:hover{opacity:.86}
+.btn.soon{background:transparent;color:var(--faint);border:1px dashed var(--faint);cursor:default}
+.btn.soon:hover{opacity:1}
+.btn .tag{font-size:12px;font-weight:400;opacity:.9}
+
+/* Explorer (teaser) */
+.explorer{margin-top:44px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 26px;padding:0;list-style:none}
+.chip{font:inherit;font-size:14.5px;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--faint)}
+.chip[aria-pressed="true"]{background:var(--target-bg);border-color:var(--target);color:var(--target-ink)}
+.stage{display:grid;grid-template-columns:minmax(0,27fr) minmax(0,73fr);gap:28px;align-items:start}
+.query{font-family:var(--serif);font-size:clamp(24px,2.6vw,30px);line-height:1.25;margin:0 0 16px}
+.query .subj{font-family:var(--sans);font-size:.62em;font-weight:500;background:var(--subject-bg);color:var(--subject-ink);border:1.5px solid var(--subject);border-radius:6px;padding:1px 8px;vertical-align:.18em}
+.query .rel{white-space:nowrap;background-image:linear-gradient(var(--target),var(--target));background-repeat:no-repeat;background-size:100% 3px;background-position:0 100%;padding-bottom:5px}
+.refimg{border-radius:6px;overflow:hidden;background:var(--wash)}
+.refimg img{width:100%}
+.gridhead .s{display:none}
+.cap{font-size:14px;color:var(--muted);line-height:1.5;margin:10px 0 0}
+.cap b{font-weight:500;color:var(--ink)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:0;margin-right:5px}
+.dot.g{background:var(--subject)} .dot.r{background:var(--target)}
+.gridhead{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));font-size:13.5px;color:var(--muted);text-align:center;margin:0 0 6px;line-height:1.25}
+.gridhead .ours{color:var(--target);font-weight:600}
+.gridbox{position:relative;border-radius:6px;overflow:hidden;background:var(--wash)}
+.gridbox img{width:100%;transition:opacity .18s ease}
+.gridbox .hl{position:absolute;top:0;bottom:0;right:0;width:20%;border:3px solid var(--target);border-radius:6px;pointer-events:none}
+.lede{font-size:18.5px;line-height:1.6;text-align:center;max-width:38em;margin:34px auto 0}
+
+/* Sections */
+section{padding-top:64px}
+h2{font-family:var(--serif);font-weight:600;font-size:30px;line-height:1.2;letter-spacing:-.005em;margin:0 0 18px}
+h3{font-family:var(--serif);font-weight:600;font-size:21px;margin:32px 0 8px}
+p{margin:0 0 16px}
+.abstract p{font-size:17.5px;text-align:left}
+em{font-style:italic}
+.fig{margin:10px auto 26px;background:#fff;border-radius:10px;padding:14px;border:1px solid var(--rule)}
+.fig img{width:100%}
+figcaption{font-size:14.5px;color:var(--muted);line-height:1.55;margin:10px auto 0;max-width:780px;padding:0 24px}
+figcaption b{color:var(--ink);font-weight:600}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;margin:8px 0 0}
+.cols h3{margin-top:0;font-size:18.5px}
+.cols p{font-size:16px;color:var(--ink)}
+.cols > div + div{border-left:1px solid var(--rule);padding-left:26px}
+
+/* Tables */
+.tbl{overflow-x:auto;margin:6px 0 10px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:8px 10px;text-align:center}
+th{font-weight:500;color:var(--muted);font-size:13.5px}
+thead tr:first-child th{color:var(--ink);font-size:14.5px}
+thead{border-top:1.5px solid var(--ink);border-bottom:1px solid var(--rule)}
+tbody{border-bottom:1.5px solid var(--ink)}
+td:first-child,th:first-child{text-align:left}
+td.set{color:var(--muted);font-size:13.5px;text-align:left}
+.grp{border-left:1px solid var(--rule)}
+tr.ours td{background:var(--target-bg);color:var(--target-ink)}
+tr.ours td:first-child{font-weight:600}
+tr.sub td{color:var(--muted)}
+tr.head td{color:var(--muted);font-size:13px;font-style:italic;padding-top:12px;text-align:left}
+b.best{font-weight:700}
+u.second{text-decoration-thickness:1px;text-underline-offset:3px}
+.tnote{font-size:14px;color:var(--muted);margin:0 0 22px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:32px;align-items:start;margin:0 0 26px}
+.two h3{margin-top:4px}
+.stack{margin:0 0 30px}
+.vs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:1px solid var(--rule);border-radius:10px;margin:18px 0 0}
+.vs-col{padding:18px 22px}
+.vs-col + .vs-col{border-left:1px solid var(--rule)}
+.vs-col.ours{background:var(--target-bg)}
+.vs-col p{font-size:15.5px;margin:0 0 10px}
+.vs-col.ours p{color:var(--ink)}
+.vs-label{font-weight:600;font-size:14.5px !important;color:var(--muted)}
+.vs-col.ours .vs-label{color:var(--target-ink)}
+.eq{font-family:var(--serif);font-size:21px !important;margin:6px 0 12px !important;white-space:nowrap;overflow-x:auto}
+.eq sub{font-size:.62em}
+.tabs{display:flex;gap:8px;overflow-x:auto;margin:14px 0 22px;padding:2px 2px 6px;scrollbar-width:thin}
+.tab{flex:none;font:inherit;font-size:14.5px;height:36px;padding:0 15px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;white-space:nowrap}
+.tab:hover{border-color:var(--faint)}
+.tab[aria-selected="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.panel p{font-size:16.5px}
+.panel[hidden]{display:none}
+.viewswitch{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.vbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;font-size:14.5px;line-height:1.3;padding:10px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.vbtn:hover{border-color:var(--faint)}
+.vbtn svg{width:18px;height:18px;flex:none}
+.vbtn[aria-selected="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.pc{position:relative;aspect-ratio:707/404;border-radius:6px;overflow:hidden;background:var(--pc-bg)}
+.pc-canvas,.pc-canvas canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pc-canvas canvas{cursor:grab}
+.pc-canvas canvas:active{cursor:grabbing}
+.pc-top{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none}
+.pc-top > *{pointer-events:auto}
+.seg{display:inline-flex;background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:3px}
+.seg button{font:inherit;font-size:13px;height:28px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-checked="true"]{background:var(--btn);color:var(--btn-ink)}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.pc-actions{display:flex;gap:6px}
+.pc-actions button{width:34px;height:34px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.pc-actions button svg{width:17px;height:17px}
+.pc-actions button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.pc-badge{position:absolute;top:54px;left:10px;margin:0;font-size:12.5px;line-height:1.3;color:var(--muted);background:var(--paper);border:1px dashed var(--faint);border-radius:6px;padding:4px 8px}
+.pc-bottom{position:absolute;left:10px;bottom:10px;pointer-events:none}
+.pc-size{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:4px 12px;pointer-events:auto}
+.pc-size input{width:86px;accent-color:var(--ink)}
+.pc-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;margin:0;padding:24px;font-size:14px;color:var(--muted);pointer-events:none}
+.pc-msg[hidden]{display:none}
+.pc-note{font-size:13px;font-style:italic;color:var(--faint);margin:6px 0 0;line-height:1.5}
+.cmap{display:inline-block;width:72px;height:9px;border-radius:2px;background:linear-gradient(90deg,#440154,#3b528b,#21918c,#5ec962,#fde725);vertical-align:-1px;margin:0 6px}
+
+.insight{background:var(--wash);border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin:36px 0 14px}
+.insight-label{font-size:13.5px;font-weight:600;color:var(--muted);margin:0 0 6px}
+.insight-text{font-family:var(--serif);font-size:clamp(16px,1.8vw,18px);line-height:1.45;margin:0}
+.toggle{border:1px solid var(--rule);border-radius:10px;margin:0}
+.toggle summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px 18px;font-weight:500;font-size:16px}
+.toggle summary::-webkit-details-marker{display:none}
+.toggle summary:hover{background:var(--wash);border-radius:10px}
+.toggle .chev{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s ease;flex:none;margin-right:2px}
+.toggle[open] .chev{transform:rotate(45deg)}
+.toggle[open] summary{border-bottom:1px solid var(--rule);border-radius:10px 10px 0 0}
+.toggle-body{padding:16px 18px 18px}
+.toggle-body .vs{margin-top:12px}
+.theme-btn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:38px;height:38px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.theme-btn:hover{border-color:var(--faint)}
+.theme-btn svg{width:18px;height:18px}
+.theme-btn .moon{display:none}
+:root[data-theme="dark"] .theme-btn .sun{display:none}
+:root[data-theme="dark"] .theme-btn .moon{display:block}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .theme-btn .sun{display:none}:root:not([data-theme="light"]) .theme-btn .moon{display:block}}
+@media (prefers-reduced-motion:reduce){.toggle .chev{transition:none}}
+
+table.ranked tr.ours td{background:none;color:inherit}
+table.ranked tr.ours td:first-child{font-weight:600}
+.ours-tag{font-weight:400;color:var(--muted)}
+table.ranked tr td.rk1,.sw.rk1{background:var(--rk1)}
+table.ranked tr td.rk2,.sw.rk2{background:var(--rk2)}
+table.ranked tr td.rk3,.sw.rk3{background:var(--rk3)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;margin:0 4px 0 10px}
+.legend .sw:first-child{margin-left:0}
+td.sub{padding-left:30px !important}
+.points{margin:0 0 18px;padding-left:1.4em}
+.points li{margin:0 0 10px;font-size:16px;line-height:1.6;padding-left:4px}
+.points li b{font-weight:600}
+.callout{background:var(--wash);border:1px solid var(--rule);border-radius:8px;padding:14px 18px;margin:0 0 18px;font-size:17px;line-height:1.5;font-weight:500}
+
+.dg{display:block;width:100%;height:auto;margin:6px 0 4px}
+.dg .ln{fill:none;stroke:var(--faint);stroke-width:1.2}
+.dg .dash{stroke-dasharray:3 3;opacity:.7}
+.dg .pts circle{fill:var(--faint);opacity:.75}
+.dg .g{fill:var(--subject)}
+.dg .rr{fill:none;stroke:var(--target);stroke-width:2.5}
+.dg .link{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:3 2}
+.dg .bx{fill:var(--paper);stroke:var(--faint);stroke-width:1.2}
+.dg .back{opacity:.8}
+.dg .cells rect{fill:var(--target);opacity:.8}
+.dg .grid{fill:none;stroke:var(--faint);stroke-width:.6;opacity:.8}
+.dg .u{fill:none;stroke:var(--ink);stroke-width:2}
+.dg .arrow{fill:none;stroke:var(--ink);stroke-width:1.5}
+.dg .head{fill:var(--ink)}
+.dg text{fill:var(--ink);font-family:var(--serif);font-style:italic;font-size:16px}
+.dg text.cap{font-family:var(--sans);font-style:normal;font-size:12px;fill:var(--muted)}
+.defs{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 14px;font-size:14.5px;line-height:1.45}
+.defs dt{font-family:var(--serif);font-size:16px;white-space:nowrap}
+.defs dd{margin:0;color:var(--muted)}
+.vs-col.ours .defs dd{color:var(--ink);opacity:.85}
+
+.stack h3{margin:0 0 6px}
+.stack .tbl{margin-top:4px}
+.two th,.two td{padding:7px 8px}
+.two p{font-size:16px}
+#ablations .two{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.io{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border:1px solid var(--rule);border-radius:10px;margin:22px 0 0}
+.io-col{padding:18px 22px}
+.io-col + .io-col{border-left:1px solid var(--rule)}
+.io h3{margin:0 0 6px;font-size:17px}
+.io ul{margin:0;padding:0;list-style:none}
+.io li{font-size:16px;padding:3px 0}
+.io .neg li{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+
+/* BibTeX */
+.bib{position:relative;background:var(--code);border:1px solid var(--rule);border-radius:10px}
+.bib pre{margin:0;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.6}
+.copy{position:absolute;top:10px;right:10px;font:inherit;font-size:13px;height:30px;padding:0 12px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.copy:hover{border-color:var(--faint)}
+
+footer{margin-top:72px;padding-top:26px;padding-bottom:40px;border-top:1px solid var(--rule);font-size:14px;color:var(--faint);text-align:center}
+
+@media (max-width:820px){
+  header{padding-top:52px}
+  section{padding-top:52px}
+  .stage{grid-template-columns:1fr;gap:20px}
+  .refwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:center}
+  .query{margin:0}
+  .cols,.two,#ablations .two{grid-template-columns:1fr;gap:6px}
+  .io,.vs{grid-template-columns:1fr}
+  .cols > div + div{border-left:0;padding-left:0;border-top:1px solid var(--rule);padding-top:18px;margin-top:12px}
+  .vs-col + .vs-col{border-left:0;border-top:1px solid var(--rule)}
+  .io-col + .io-col{border-left:0;border-top:1px solid var(--rule)}
+  .gridhead{font-size:12px}
+  .viewswitch{flex-direction:row}
+  .pc{aspect-ratio:1/0.95}
+  .vbtn{flex:1;font-size:13.5px;padding:9px 10px}
+  .gridhead .l{display:none}
+  .gridhead .s{display:inline}
+  .fig{padding:8px;border-radius:8px}
+  figcaption{padding:0 4px}
+}
+@media (max-width:520px){
+  body{font-size:16px}
+  .refwrap{grid-template-columns:1fr}
+  .authors{font-size:16.5px}
+  .affils span{display:block}
+}
+@media (prefers-reduced-motion:reduce){.gridbox img{transition:none}}
+</style>
+<script>
+try { var t = localStorage.getItem("rvggt-theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
+</head>
+<body>
+
+<button class="theme-btn" id="themebtn" type="button" aria-label="Switch between light and dark mode">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="wrap" style="max-width:980px">
+  <div class="venue">NeurIPS 2026</div>
+  <h1>RelationVGGT</h1>
+  <p class="subtitle">Visual Geometry Transformers for 3D Spatial Relation Segmentation</p>
+
+  <p class="authors">
+    <a href="https://minsu1206.github.io/">Minsu Kim</a><sup>1</sup><span class="sep"></span>
+    <a href="https://jaesung-choe.github.io/">Jaesung Choe</a><sup>2</sup><span class="sep"></span>
+    <a href="https://gibsonlee01.github.io/">Jiwoo Lee</a><sup>1</sup><span class="sep"></span>
+    <a href="https://vllab.ee.ntu.edu.tw/ycwang.html">Yu-Chiang Frank Wang</a><sup>2</sup><span class="sep"></span>
+    <a href="https://sites.google.com/site/seonjookim/">Seon Joo Kim</a><sup>1</sup>
+  </p>
+  <p class="affils"><span><sup>1</sup>Yonsei University</span><span><sup>2</sup>NVIDIA</span></p>
+
+  <ul class="links" id="links"></ul>
+</header>
+
+<div class="wide explorer" id="explorer">
+  <ul class="chips" id="chips" aria-label="Choose a relation query"></ul>
+  <div class="stage">
+    <div class="refwrap">
+      <p class="query" id="query" aria-live="polite"></p>
+      <div>
+        <div class="refimg"><img id="refimg" src="static/images/ex_hanging_on_ref.webp" alt="Reference view with the subject highlighted in green" width="284" height="190"></div>
+        <p class="cap"><span class="dot g"></span><b>Reference view.</b> The subject is given only as a mask in this one view.</p>
+        <div class="viewswitch" role="tablist" aria-label="Result view">
+          <button class="vbtn" role="tab" id="vt-mv" aria-controls="vp-mv" aria-selected="true" tabindex="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg>Multi-view comparisons</button>
+          <button class="vbtn" role="tab" id="vt-3d" aria-controls="vp-3d" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8 20 7.4v9.2L12 21.2 4 16.6V7.4z"/><path d="M4 7.4l8 4.6 8-4.6M12 12v9.2"/></svg>3D point cloud visualization</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div id="vp-mv" role="tabpanel" aria-labelledby="vt-mv">
+      <div class="gridhead" aria-hidden="true"><span>LangSplat</span><span><span class="l">OpenGaussian</span><span class="s">OpenGS</span></span><span><span class="l">RelationField</span><span class="s">RF</span></span><span><span class="l">RelationField&dagger;</span><span class="s">RF&dagger;</span></span><span class="ours">Ours</span></div>
+      <div class="gridbox"><img id="gridimg" src="static/images/ex_hanging_on_grid.webp" alt="Predicted target masks in four target views for each method" width="707" height="380"><div class="hl"></div></div>
+      <p class="cap"><span class="dot r"></span><b>Target views.</b> Each row is a different target view; red marks the predicted target. Baselines need posed images and per-scene optimization, RelationVGGT runs feed-forward on unposed images.</p>
+      </div>
+      <div id="vp-3d" role="tabpanel" aria-labelledby="vt-3d" hidden>
+        <div class="pc" id="pc">
+          <div class="pc-canvas" id="pccanvas"></div>
+          <div class="pc-top">
+            <div class="seg" role="radiogroup" aria-label="Point colors">
+              <button type="button" role="radio" data-mode="target" aria-checked="true">Ours</button>
+              <button type="button" role="radio" data-mode="relevance" aria-checked="false">Relevance</button>
+              <button type="button" role="radio" data-mode="rgb" aria-checked="false">RGB</button>
+            </div>
+            <div class="pc-actions">
+              <button type="button" id="pcrot" aria-pressed="true" aria-label="Auto-rotate" title="Auto-rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg></button>
+              <button type="button" id="pcreset" aria-label="Reset view" title="Reset view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M6 9.5V20h12V9.5"/></svg></button>
+            </div>
+          </div>
+          <p class="pc-badge" id="pcbadge" hidden>Placeholder scene, not a model output</p>
+          <div class="pc-bottom">
+            <label class="pc-size">Point size <input type="range" id="pcsize" min="0.4" max="3" step="0.1" value="1"></label>
+          </div>
+          <p class="pc-msg" id="pcmsg">Loading 3D viewer&hellip;</p>
+        </div>
+        <p class="cap" id="pccap"></p>
+        <p class="pc-note">Point clouds shown here are downsampled for the web and are sparser than the full-resolution outputs.</p>
+      </div>
+    </div>
+  </div>
+  <p class="lede">Given a subject mask in one view and a relational query such as <em>&ldquo;resting on&rdquo;</em>, RelationVGGT segments the target object in every other view without being told its category, in a single forward pass on unposed images.</p>
+</div>
+
+<main>
+<section class="wrap abstract" id="abstract">
+  <h2>Abstract</h2>
+  <p>Recent advances in 3D reconstruction have progressed from per-scene optimization to feed-forward inference, and semantic scene understanding has followed suit&mdash;yet existing methods remain confined to object-centric perception, neglecting spatial relations between objects. We formulate <em>3D spatial relation segmentation</em> in a feed-forward, pose-free multi-view setting: given a visually specified subject and a relational text query, the model segments the target across views without receiving its category name. To this end, we propose RelationVGGT, a novel feed-forward framework that integrates semantic features from a visual foundation model with geometry-aware representations from a 3D geometry foundation model and leverages a relation transformer for subject-conditioned, cross-view relation prediction&mdash;requiring neither per-scene optimization nor known camera poses. We additionally provide a fully automated annotation pipeline built on ScanNet++ with VLMs and LLMs, enabling scalable training data generation for this new task.</p>
+</section>
+
+<section class="wrap" id="task">
+  <h2>The task</h2>
+  <p>A scene is captured by a set of images. One of them is the <em>reference view</em>, where a mask marks the <em>subject</em>: the object the relation starts from. A relational text query names the spatial relation, and the <em>target</em> is the object that satisfies it with respect to the subject. For every other view, the model must segment that target. If the subject is a monitor and the query is &ldquo;resting on&rdquo;, the answer is the desk under it, in every view where the desk appears.</p>
+  <div class="io">
+    <div class="io-col">
+      <h3>Given</h3>
+      <ul>
+        <li>Unposed multi-view images of a scene</li>
+        <li><span class="dot g"></span>A subject mask in a single reference view</li>
+        <li>A relation phrase, e.g. &ldquo;resting on&rdquo;</li>
+      </ul>
+    </div>
+    <div class="io-col">
+      <h3>Predict</h3>
+      <ul>
+        <li><span class="dot r"></span>The target object&rsquo;s mask in every other view</li>
+      </ul>
+      <h3 style="margin-top:18px">Never given</h3>
+      <ul class="neg">
+        <li>The target&rsquo;s category name</li>
+        <li>Camera poses or per-scene optimization</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="insight">
+    <p class="insight-label">Key insight</p>
+    <p class="insight-text">3D relational reasoning does not require volumetric search: 3D-aware features and pixel-wise geometric grounding let us localize relational targets directly in image space.</p>
+  </div>
+  <details class="toggle">
+    <summary><span class="chev" aria-hidden="true"></span>What changed? From volumetric search to pixel-grid prediction</summary>
+    <div class="toggle-body">
+      <p>The closest prior work, RelationField, models relations inside a radiance field. We keep the idea of a relation feature but move where it is predicted.</p>
+  <div class="vs">
+      <div class="vs-col">
+        <p class="vs-label">Prior work: volumetric search</p>
+        <svg class="dg" viewBox="0 0 320 196" role="img" aria-label="A 3D scene volume filled with candidate points. The relation function is evaluated between the subject point z and every candidate point x.">
+          <path class="ln dash" d="M100 125 L100 20 M100 125 L230 125 M100 125 L40 165"/>
+          <path class="ln" d="M40 60 H170 V165 H40 Z M40 60 L100 20 H230 L170 60 M230 20 V125 L170 165"/>
+          <g class="pts">
+            <circle cx="65" cy="68.3" r="2"/><circle cx="90" cy="68.3" r="2"/><circle cx="115" cy="68.3" r="2"/><circle cx="140" cy="68.3" r="2"/><circle cx="165" cy="68.3" r="2"/>
+            <circle cx="65" cy="92.3" r="2"/><circle cx="90" cy="92.3" r="2"/><circle cx="115" cy="92.3" r="2"/><circle cx="140" cy="92.3" r="2"/><circle cx="165" cy="92.3" r="2"/>
+            <circle cx="65" cy="116.3" r="2"/><circle cx="90" cy="116.3" r="2"/><circle cx="115" cy="116.3" r="2"/><circle cx="140" cy="116.3" r="2"/><circle cx="165" cy="116.3" r="2"/>
+            <circle cx="65" cy="140.3" r="2"/><circle cx="90" cy="140.3" r="2"/><circle cx="115" cy="140.3" r="2"/><circle cx="140" cy="140.3" r="2"/><circle cx="165" cy="140.3" r="2"/>
+            <circle cx="85" cy="55" r="2"/><circle cx="110" cy="55" r="2"/><circle cx="135" cy="55" r="2"/><circle cx="160" cy="55" r="2"/><circle cx="185" cy="55" r="2"/>
+            <circle cx="85" cy="79" r="2"/><circle cx="110" cy="79" r="2"/><circle cx="135" cy="79" r="2"/><circle cx="160" cy="79" r="2"/><circle cx="185" cy="79" r="2"/>
+            <circle cx="85" cy="103" r="2"/><circle cx="110" cy="103" r="2"/><circle cx="135" cy="103" r="2"/><circle cx="160" cy="103" r="2"/><circle cx="185" cy="103" r="2"/>
+            <circle cx="85" cy="127" r="2"/><circle cx="110" cy="127" r="2"/><circle cx="135" cy="127" r="2"/><circle cx="160" cy="127" r="2"/>
+            <circle cx="105" cy="41.7" r="2"/><circle cx="130" cy="41.7" r="2"/><circle cx="155" cy="41.7" r="2"/><circle cx="180" cy="41.7" r="2"/><circle cx="205" cy="41.7" r="2"/>
+            <circle cx="105" cy="65.7" r="2"/><circle cx="130" cy="65.7" r="2"/><circle cx="155" cy="65.7" r="2"/><circle cx="180" cy="65.7" r="2"/><circle cx="205" cy="65.7" r="2"/>
+            <circle cx="105" cy="89.7" r="2"/><circle cx="130" cy="89.7" r="2"/><circle cx="155" cy="89.7" r="2"/><circle cx="180" cy="89.7" r="2"/><circle cx="205" cy="89.7" r="2"/>
+            <circle cx="105" cy="113.7" r="2"/><circle cx="130" cy="113.7" r="2"/><circle cx="155" cy="113.7" r="2"/><circle cx="180" cy="113.7" r="2"/><circle cx="205" cy="113.7" r="2"/>
+          </g>
+          <path class="link" d="M90 140.3 L185 103"/>
+          <circle class="g" cx="90" cy="140.3" r="6.5"/>
+          <text x="72" y="160">z</text>
+          <circle class="rr" cx="185" cy="103" r="6.5"/>
+          <text x="194" y="99">x</text>
+          <text class="cap" x="245" y="60">evaluate</text>
+          <text class="cap" x="245" y="75"><tspan font-style="italic">g</tspan><tspan baseline-shift="sub" font-size="9">&#952;</tspan> at every</text>
+          <text class="cap" x="245" y="90">candidate <tspan font-style="italic" font-weight="600">x</tspan></text>
+          <text class="cap" x="105" y="188" text-anchor="middle">scene volume (per-scene, posed)</text>
+        </svg>
+        <p class="eq"><i>g</i><sub>&theta;</sub>(<b>x</b>, <b>z</b>) &#8614; <b>r</b></p>
+        <dl class="defs">
+          <dt><b>x</b></dt><dd>3D position of a candidate target point</dd>
+          <dt><b>z</b></dt><dd>3D position of the query subject</dd>
+          <dt><b>r</b></dt><dd>relation feature between <b>x</b> and <b>z</b>, compared with the text embedding of the query</dd>
+        </dl>
+        <p>Finding the target means evaluating <i>g</i><sub>&theta;</sub> at every candidate <b>x</b> in the scene volume. That requires an explicit reconstruction optimized per scene from posed images, and scene-specific positional encodings tie what is learned to one coordinate system.</p>
+      </div>
+      <div class="vs-col ours">
+        <p class="vs-label">RelationVGGT: pixel-grid prediction</p>
+        <svg class="dg" viewBox="0 0 320 196" role="img" aria-label="A reference image with a green subject mask feeds the model, which predicts a relation feature for every pixel of each target view; target pixels are shown in red.">
+          <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+          <rect class="bx" x="8" y="62" width="96" height="68" rx="3"/>
+          <path class="g" d="M36 104 q-4 -18 10 -22 q16 -3 20 10 q3 14 -12 18 q-14 3 -18 -6z"/>
+          <text x="40" y="154"><tspan>I</tspan><tspan baseline-shift="sub" font-size="10">r</tspan><tspan font-style="normal" dx="3">,</tspan><tspan dx="5">M</tspan><tspan baseline-shift="sub" font-size="10">s</tspan></text>
+          <text class="cap" x="56" y="172" text-anchor="middle">reference view</text>
+          <text class="cap" x="56" y="187" text-anchor="middle">with subject mask</text>
+          <path class="arrow" d="M112 96 H146" marker-end="url(#ah)"/>
+          <text x="118" y="86" font-size="13"><tspan>f</tspan><tspan baseline-shift="sub" font-size="9">&#952;</tspan></text>
+          <rect class="bx back" x="182" y="30" width="130" height="85" rx="3"/>
+          <rect class="bx back" x="170" y="42" width="130" height="85" rx="3"/>
+          <rect class="bx" x="158" y="54" width="130" height="85" rx="3"/>
+          <g class="cells">
+            <rect x="184" y="88" width="13" height="17"/><rect x="197" y="88" width="13" height="17"/><rect x="210" y="88" width="13" height="17"/><rect x="223" y="88" width="13" height="17"/>
+            <rect x="171" y="105" width="13" height="17"/><rect x="184" y="105" width="13" height="17"/><rect x="197" y="105" width="13" height="17"/><rect x="210" y="105" width="13" height="17"/><rect x="223" y="105" width="13" height="17"/><rect x="236" y="105" width="13" height="17"/>
+            <rect x="184" y="122" width="13" height="17"/><rect x="197" y="122" width="13" height="17"/><rect x="210" y="122" width="13" height="17"/><rect x="223" y="122" width="13" height="17"/>
+          </g>
+          <path class="grid" d="M171 54 V139 M184 54 V139 M197 54 V139 M210 54 V139 M223 54 V139 M236 54 V139 M249 54 V139 M262 54 V139 M275 54 V139 M158 71 H288 M158 88 H288 M158 105 H288 M158 122 H288"/>
+          <rect class="u" x="262" y="71" width="13" height="17"/>
+          <path class="link" d="M275 71 L296 58"/>
+          <text x="298" y="56">u</text>
+          <text x="223" y="160"><tspan>I</tspan><tspan baseline-shift="sub" font-size="10">t</tspan></text>
+          <text class="cap" x="223" y="176" text-anchor="middle"><tspan font-weight="600">r</tspan><tspan baseline-shift="sub" font-size="9">t</tspan>(<tspan font-weight="600">u</tspan>) for every pixel,</text>
+          <text class="cap" x="223" y="191" text-anchor="middle">every target view, one pass</text>
+        </svg>
+        <p class="eq"><i>f</i><sub>&theta;</sub>(<i>I</i><sub>r</sub>, <i>M</i><sub>s</sub>, <i>I</i><sub>t</sub>, <b>u</b>) &rarr; <b>r</b><sub>t</sub>(<b>u</b>)</p>
+        <dl class="defs">
+          <dt><i>I</i><sub>r</sub></dt><dd>reference image, the one view where the subject is marked</dd>
+          <dt><i>M</i><sub>s</sub></dt><dd>binary mask of the subject in <i>I</i><sub>r</sub></dd>
+          <dt><i>I</i><sub>t</sub></dt><dd>a target view: any of the other images</dd>
+          <dt><b>u</b></dt><dd>a pixel location in <i>I</i><sub>t</sub></dd>
+          <dt><b>r</b><sub>t</sub>(<b>u</b>)</dt><dd>relation feature between pixel <b>u</b> and the subject, aligned with the language embedding space</dd>
+        </dl>
+        <p>With the subject fixed by <i>I</i><sub>r</sub> and <i>M</i><sub>s</sub>, the search moves onto each target view&rsquo;s image grid. Comparing <b>r</b><sub>t</sub>(<b>u</b>) with the query embedding <b>e</b>(<i>q</i>) gives a dense relevance map directly: no volume to sweep, no per-scene optimization, and the model transfers to unseen scenes.</p>
+      </div>
+    </div>
+    </div>
+  </details>
+  <p style="margin-top:18px">The task also differs from 3D referring segmentation, where a text expression can name the target outright. Here the subject is specified visually and only the relation is given in words, so the target&rsquo;s identity must be inferred from the subject&ndash;relation pair.</p>
+</section>
+
+<section id="method">
+  <div class="wrap">
+    <h2>Method</h2>
+    <p>RelationVGGT turns the reference subject and a set of unposed views into language-aligned relation features for every target-view pixel, in a single forward pass.</p>
+  </div>
+  <div class="wide">
+    <figure style="margin:0">
+      <div class="fig"><img src="static/images/method2.webp" alt="RelationVGGT architecture overview" width="2561" height="1281" loading="lazy"></div>
+      <figcaption><b>Overview of RelationVGGT.</b> Multi-view images are encoded by frozen 2D and 3D visual foundation models and fused by an input mixer. The subject mask conditions the relation transformer, whose output is decoded into per-view relation feature maps. The target is segmented by feature&ndash;text similarity with the encoded relational query.</figcaption>
+    </figure>
+  </div>
+  <div class="wrap">
+    <div class="cols" style="margin-top:34px">
+      <div><h3>Semantics meet geometry</h3><p>Dense DINOv2 features supply object-level semantics; Pi3 encoder tokens supply multi-view geometry. An input mixer fuses both into joint tokens for every view.</p></div>
+      <div><h3>Relation transformer</h3><p>Target tokens alternate cross-attention to the subject-masked reference tokens with self-attention across all target views, making them subject-conditioned and multi-view aware.</p></div>
+      <div><h3>Open-vocabulary masks</h3><p>A DPT head upsamples tokens to pixel-aligned relation features. A sigmoid over feature&ndash;text similarity gives the mask; Pi3&rsquo;s point decoder lifts it to 3D.</p></div>
+    </div>
+    <p class="tnote" style="margin-top:6px">One spatial arrangement can be described many ways (&ldquo;standing on&rdquo;, &ldquo;on&rdquo;, &ldquo;supported by&rdquo;), so each target mask is supervised with several compatible phrasings at once, using a multi-query sigmoid focal loss and a Dice loss.</p>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <h2>Automatic relation annotation</h2>
+    <p>Multi-view consistent relation labels are scarce and costly to annotate by hand. We build them automatically on ScanNet++: a VLM proposes relations per frame with Set-of-Mark prompting, proposals are kept only if at least three viewpoints agree, geometric checks on 3D boxes remove implausible edges, and an LLM rephrases each triplet to diversify the queries.</p>
+  </div>
+  <div class="wide">
+    <figure style="margin:0">
+      <div class="fig"><img src="static/images/dataset2.webp" alt="Relation annotation pipeline" width="2678" height="866" loading="lazy"></div>
+      <figcaption><b>Relation annotation pipeline.</b> (a) Instance masks are projected onto frames with SoM prompting to query a VLM for pairwise relations. (b) Proposals are aggregated into a scene graph and refined by geometry-aware post-processing and LLM rephrasing. (c) Multi-view consistent subject (green) and target (red) annotations.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <h2>Results</h2>
+    <p>We evaluate on manually annotated relation benchmarks built on Replica, LERF, and ScanNet++: 119 queries covering 28 unique predicates. mAcc is the fraction of queries with IoU above 0.25.</p>
+  </div>
+  <div class="wrap" style="max-width:1000px">
+    <div class="tbl">
+      <table class="ranked">
+        <thead>
+          <tr><th rowspan="2">Method</th><th rowspan="2">Setting</th><th colspan="2" class="grp">Replica</th><th colspan="2" class="grp">LERF</th><th colspan="2" class="grp">ScanNet++</th><th colspan="2" class="grp">Average</th></tr>
+          <tr><th class="grp">mIoU</th><th>mAcc</th><th class="grp">mIoU</th><th>mAcc</th><th class="grp">mIoU</th><th>mAcc</th><th class="grp">mIoU</th><th>mAcc</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>LangSplat</td><td class="set">Per-scene, posed</td><td class="grp">0.191</td><td>0.256</td><td class="grp">0.159</td><td>0.254</td><td class="grp">0.074</td><td>0.064</td><td class="grp">0.141</td><td>0.191</td></tr>
+          <tr><td>OpenGaussian</td><td class="set">Per-scene, posed</td><td class="grp rk2">0.349</td><td class="rk3">0.470</td><td class="grp rk2">0.256</td><td class="rk2">0.378</td><td class="grp">0.162</td><td>0.254</td><td class="grp rk3">0.255</td><td class="rk3">0.367</td></tr>
+          <tr><td>RelationField</td><td class="set">Per-scene, posed</td><td class="grp rk3">0.326</td><td class="rk2">0.537</td><td class="grp rk1"><b>0.276</b></td><td class="rk1"><b>0.410</b></td><td class="grp rk2">0.307</td><td class="rk2">0.491</td><td class="grp rk2">0.303</td><td class="rk2">0.480</td></tr>
+          <tr><td>RelationField&dagger;</td><td class="set">Per-scene, posed</td><td class="grp">0.219</td><td>0.336</td><td class="grp">0.232</td><td class="rk3">0.346</td><td class="grp rk3">0.240</td><td class="rk3">0.395</td><td class="grp">0.230</td><td>0.359</td></tr>
+          <tr class="ours"><td>RelationVGGT <span class="ours-tag">(Ours)</span></td><td class="set">Feed-forward, pose-free</td><td class="grp rk1"><b>0.446</b></td><td class="rk1"><b>0.640</b></td><td class="grp rk3">0.254</td><td>0.332</td><td class="grp rk1"><b>0.445</b></td><td class="rk1"><b>0.675</b></td><td class="grp rk1"><b>0.382</b></td><td class="rk1"><b>0.549</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="tnote legend"><span class="sw rk1"></span>Best <span class="sw rk2"></span>Second <span class="sw rk3"></span>Third. Average is the macro average over the three benchmarks. RelationField&dagger; removes target-object retrieval and uses the relation embedding alone. RelationField also receives the ground-truth target category at test time; RelationVGGT does not.</p>
+
+    <h3>Wide camera baselines</h3>
+    <p>We also compare with video foundation models, feeding the multi-view frames as a video with the subject region and relation, but not the target category. The 119 queries are sorted by camera baseline into three near-equal groups. Video models degrade as viewpoints spread apart, while the 3D geometry backbone keeps RelationVGGT stable.</p>
+    <div class="tbl">
+      <table class="ranked">
+        <thead>
+          <tr><th rowspan="2">Method</th><th colspan="2" class="grp">Small baseline (40)</th><th colspan="2" class="grp">Medium baseline (39)</th><th colspan="2" class="grp">Large baseline (40)</th></tr>
+          <tr><th class="grp">mIoU</th><th>mAcc</th><th class="grp">mIoU</th><th>mAcc</th><th class="grp">mIoU</th><th>mAcc</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>VideoLISA</td><td class="grp">0.137</td><td>0.171</td><td class="grp">0.105</td><td>0.143</td><td class="grp">0.038</td><td>0.064</td></tr>
+          <tr><td>Sa2VA</td><td class="grp rk3">0.267</td><td class="rk3">0.321</td><td class="grp rk3">0.225</td><td class="rk3">0.289</td><td class="grp rk3">0.192</td><td class="rk3">0.225</td></tr>
+          <tr><td>UniPixel</td><td class="grp rk1"><b>0.423</b></td><td class="rk2">0.496</td><td class="grp rk2">0.328</td><td class="rk2">0.451</td><td class="grp rk2">0.354</td><td class="rk2">0.475</td></tr>
+          <tr class="ours"><td>RelationVGGT <span class="ours-tag">(Ours)</span></td><td class="grp rk2">0.417</td><td class="rk1"><b>0.550</b></td><td class="grp rk1"><b>0.404</b></td><td class="rk1"><b>0.640</b></td><td class="grp rk1"><b>0.366</b></td><td class="rk1"><b>0.575</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="wide" style="margin-top:22px">
+    <figure style="margin:0">
+      <div class="fig"><img src="static/images/vs_videollm.webp" alt="Comparison with UniPixel across views" width="2500" height="788" loading="lazy"></div>
+      <figcaption><b>RelationVGGT vs. UniPixel.</b> Our masks stay consistent across views, whereas UniPixel loses the target as the viewpoint changes.</figcaption>
+    </figure>
+  </div>
+
+  <div class="wrap" id="analysis">
+    <h3 style="margin-top:44px">More analysis</h3>
+    <div class="tabs" role="tablist" aria-label="Additional experiments">
+      <button class="tab" role="tab" id="tab-abl" aria-controls="panel-abl" aria-selected="true" tabindex="0">Ablations</button>
+      <button class="tab" role="tab" id="tab-mask" aria-controls="panel-mask" aria-selected="false" tabindex="-1">Subject masks</button>
+      <button class="tab" role="tab" id="tab-pred" aria-controls="panel-pred" aria-selected="false" tabindex="-1">Predicate expressions</button>
+      <button class="tab" role="tab" id="tab-ref" aria-controls="panel-ref" aria-selected="false" tabindex="-1">Referring segmentation</button>
+      <button class="tab" role="tab" id="tab-audit" aria-controls="panel-audit" aria-selected="false" tabindex="-1">Label quality</button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-abl" aria-labelledby="tab-abl">
+      <p class="callout">Every component pulls its weight: removing any one of them lowers ScanNet++ mIoU by 0.023 to 0.075.</p>
+      <ol class="points">
+        <li><b>Input features.</b> Replacing Pi3 tokens with positionally encoded, scale-standardized pointmaps drops mIoU from 0.445 to 0.370: raw coordinates carry geometry but none of the semantics already embedded in learned features. Removing DINOv2 (Pi3 only) costs 0.023 mIoU as object-level semantics are lost. Removing Pi3 (DINOv2 only) costs 0.075, since DINOv2 alone has no multi-view awareness and cannot capture cross-view correspondence.</li>
+        <li><b>Relation transformer.</b> Our block alternates subject-conditioned cross-attention with global self-attention across target views. A cross-attention-only variant (0.399) and VGGT&rsquo;s alternating attention, which interleaves global and per-frame self-attention (0.394), both fall short.</li>
+        <li><b>Training objective.</b> Supervising each mask with a single predicate instead of several compatible ones drops mIoU to 0.406. Spatial relations are many-to-one, and multi-query supervision avoids penalizing semantically plausible alternatives.</li>
+        <li><b>Annotation pipeline.</b> Training on labels without geometry-based edge filtering drops mIoU to 0.398, because the model then learns from physically implausible relations, such as contact between distant objects.</li>
+      </ol>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Design</th><th>mIoU</th><th>mAcc</th></tr></thead>
+          <tbody>
+            <tr class="ours"><td>RelationVGGT</td><td><b class="best">0.445</b></td><td><b class="best">0.675</b></td></tr>
+            <tr class="head"><td colspan="3">1. Input features</td></tr>
+            <tr><td class="sub">Pointmap PE + DINOv2</td><td>0.370</td><td>0.568</td></tr>
+            <tr><td class="sub">Pi3 only</td><td>0.422</td><td>0.579</td></tr>
+            <tr><td class="sub">DINOv2 only</td><td>0.370</td><td>0.579</td></tr>
+            <tr class="head"><td colspan="3">2. Relation transformer</td></tr>
+            <tr><td class="sub">Cross-attention only</td><td>0.399</td><td>0.579</td></tr>
+            <tr><td class="sub">Alternating attention (VGGT)</td><td>0.394</td><td>0.571</td></tr>
+            <tr class="head"><td colspan="3">3. Training objective</td></tr>
+            <tr><td class="sub">Single-label focal loss</td><td>0.406</td><td>0.604</td></tr>
+            <tr class="head"><td colspan="3">4. Annotation pipeline</td></tr>
+            <tr><td class="sub">w/o geometric edge filtering</td><td>0.398</td><td>0.625</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">ScanNet++ benchmark, 40 queries, threshold &tau; = 0.3.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-mask" aria-labelledby="tab-mask" hidden>
+      <p class="callout">A single click is enough: RelationVGGT needs the right instance, not a pixel-perfect subject mask.</p>
+      <p>We replace the ground-truth subject mask with prompted or automatically estimated masks, using the same checkpoint without retraining. A single SAM2 click or box works as well as the ground-truth mask: the boundary need not be precise, as long as the right instance is picked. Fully automatic grounding with Qwen3-VL + SAM2 keeps most of the accuracy; GroundingDINO drops more, mainly because 58% of reference views contain several instances of the queried category.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Subject mask</th><th>Mask IoU</th><th>mIoU</th><th>mAcc</th></tr></thead>
+          <tbody>
+            <tr><td>Ground truth</td><td>1.000</td><td>0.382</td><td>0.549</td></tr>
+            <tr><td>SAM2, one click</td><td>0.871</td><td>0.383</td><td>0.551</td></tr>
+            <tr><td>SAM2, one box</td><td>0.923</td><td>0.382</td><td>0.549</td></tr>
+            <tr><td>Qwen3-VL + SAM2</td><td>0.719</td><td>0.357</td><td>0.512</td></tr>
+            <tr><td>GroundingDINO + SAM2</td><td>0.587</td><td>0.322</td><td>0.454</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">All three benchmarks, 119 queries.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-pred" aria-labelledby="tab-pred" hidden>
+      <p class="callout">RelationVGGT learns what a predicate means rather than matching memorized labels: synonyms leave its answer intact, while a different relation changes it.</p>
+      <p>Replacing each benchmark predicate with a meaning-preserving synonym barely changes the result, even for expressions whose stems never occur in training. Prediction is not tied to exact predicate strings.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Predicate replaced with</th><th>n</th><th>&Delta;mIoU</th><th>&Delta;mAcc</th></tr></thead>
+          <tbody>
+            <tr><td>Common synonym, set A</td><td>119</td><td>&minus;0.006</td><td>&minus;0.006</td></tr>
+            <tr><td>Common synonym, set B</td><td>119</td><td>&minus;0.004</td><td>&minus;0.001</td></tr>
+            <tr><td>Rare synonym</td><td>113</td><td>&minus;0.022</td><td>&minus;0.042</td></tr>
+            <tr><td>Unseen synonym</td><td>119</td><td>&minus;0.031</td><td>&minus;0.040</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:22px">The reverse check: when the predicate&rsquo;s meaning is changed while the scene, subject, and original target stay fixed, predictions move away from the original target. The model responds to what the relation means, not only to the subject.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Predicate replaced with</th><th>n</th><th>&Delta;mIoU</th></tr></thead>
+          <tbody>
+            <tr><td>Random relation from another family</td><td>119</td><td>&minus;0.158</td></tr>
+            <tr><td>Relation with a different correct target</td><td>118</td><td>&minus;0.276</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-ref" aria-labelledby="tab-ref" hidden>
+      <p class="callout">Specifying the subject visually removes the instance ambiguity that text-only referring must resolve, giving +0.169 mIoU over the strongest adapted referring method.</p>
+      <p>MVGGT and ReferSplat take the subject as text rather than a mask, so we adapt each through its native text interface. With text alone, the subject must itself be grounded from a noun phrase, which is often ambiguous when several instances share a category.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Method</th><th>Subject given as</th><th>Target category in input</th><th>Test-scene optimization</th><th>mIoU</th><th>mAcc</th></tr></thead>
+          <tbody>
+            <tr><td>MVGGT</td><td>Text</td><td>Yes</td><td>No</td><td>0.153</td><td>0.217</td></tr>
+            <tr><td>ReferSplat</td><td>Text</td><td>No</td><td>Yes</td><td>0.213</td><td>0.263</td></tr>
+            <tr class="ours"><td>RelationVGGT</td><td>Visual mask</td><td>No</td><td>No</td><td><b class="best">0.382</b></td><td><b class="best">0.549</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">Averaged over all three benchmarks. Not a matched-input comparison: the methods also differ in query form, pretraining data, and optimization.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-audit" aria-labelledby="tab-audit" hidden>
+      <p class="callout">Multi-view and geometric filtering nearly doubles label precision, from 36.4% to 67.2%, deliberately trading coverage for reliability.</p>
+      <p>Two authors independently audited all 4,695 relation proposals our pipeline produced on 25 ScanNet++ scenes, without seeing its keep/remove decision. Filtering nearly doubles precision and discards most wrong relations. It is deliberately conservative: a false relation that survives becomes training supervision, while a dropped correct one only costs coverage.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Human audit, 25 scenes</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Precision before filtering</td><td>36.4%</td></tr>
+            <tr class="ours"><td>Precision after filtering</td><td><b class="best">67.2%</b></td></tr>
+            <tr><td>Incorrect proposals removed</td><td>92.0%</td></tr>
+            <tr><td>Proposals kept</td><td>770 of 4,695</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tnote">Inter-annotator agreement 83.1% (Cohen&rsquo;s &kappa; = 0.670; 0.816 excluding ambiguous judgments).</p>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="wrap" id="bibtex">
+  <h2>BibTeX</h2>
+  <div class="bib">
+    <button class="copy" id="copybtn" type="button">Copy</button>
+<pre id="bibtext">@inproceedings{kim2026relationvggt,
+  title     = {RelationVGGT: Visual Geometry Transformers for
+               3D Spatial Relation Segmentation},
+  author    = {Kim, Minsu and Choe, Jaesung and Lee, Jiwoo and
+               Wang, Yu-Chiang Frank and Kim, Seon Joo},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2026}
+}</pre>
+  </div>
+</section>
+</main>
+
+
+
+<footer class="wrap">Page layout in the tradition of the Nerfies project page.</footer>
+
+<script>
+/* ---- Fill these in when available. Empty string = shown as "coming soon". ---- */
+var LINKS = {
+  paper:     "",   /* camera-ready PDF or NeurIPS proceedings */
+  arxiv:     "",
+  code:      "",   /* GitHub repository */
+  benchmark: ""    /* relation segmentation benchmark */
+};
+
+var ICONS = {
+  paper:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+  arxiv:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg>',
+  code:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.4 1.1 2.9.8.1-.7.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg>',
+  benchmark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><rect x="5" y="11" width="3.5" height="6" rx="1"/><rect x="10.25" y="6" width="3.5" height="11" rx="1"/><rect x="15.5" y="9" width="3.5" height="8" rx="1"/></svg>' 
+};
+var LABELS = {paper:"Paper", arxiv:"arXiv", code:"Code", benchmark:"Benchmark"};
+
+(function renderLinks(){
+  var ul = document.getElementById("links");
+  Object.keys(LABELS).forEach(function(k){
+    var li = document.createElement("li");
+    var url = LINKS[k];
+    if (url) {
+      li.innerHTML = '<a class="btn" href="'+url+'" target="_blank" rel="noopener">'+ICONS[k]+LABELS[k]+'</a>';
+    } else {
+      li.innerHTML = '<span class="btn soon" aria-disabled="true">'+ICONS[k]+LABELS[k]+' <span class="tag">soon</span></span>';
+    }
+    ul.appendChild(li);
+  });
+})();
+
+/* ---- Relation explorer ---- */
+var EXAMPLES = [
+  {rel:"hanging on",    slug:"hanging_on"},
+  {rel:"attached to",   slug:"attached_to"},
+  {rel:"resting on",    slug:"resting_on"},
+  {rel:"lying on",      slug:"lying_on"},
+  {rel:"surrounded by", slug:"surrounded_by"},
+  {rel:"inserted into", slug:"inserted_into"},
+  {rel:"inside",        slug:"inside"},
+  {rel:"on",            slug:"on"}
+];
+var IMG = {
+  resting_on:["static/images/ex_resting_on_ref.webp","static/images/ex_resting_on_grid.webp"],
+  attached_to:["static/images/ex_attached_to_ref.webp","static/images/ex_attached_to_grid.webp"],
+  hanging_on:["static/images/ex_hanging_on_ref.webp","static/images/ex_hanging_on_grid.webp"],
+  lying_on:["static/images/ex_lying_on_ref.webp","static/images/ex_lying_on_grid.webp"],
+  surrounded_by:["static/images/ex_surrounded_by_ref.webp","static/images/ex_surrounded_by_grid.webp"],
+  inserted_into:["static/images/ex_inserted_into_ref.webp","static/images/ex_inserted_into_grid.webp"],
+  inside:["static/images/ex_inside_ref.webp","static/images/ex_inside_grid.webp"],
+  on:["static/images/ex_on_ref.webp","static/images/ex_on_grid.webp"]
+};
+
+(function explorer(){
+  var chips = document.getElementById("chips");
+  var q = document.getElementById("query");
+  var ref = document.getElementById("refimg");
+  var grid = document.getElementById("gridimg");
+  var buttons = [];
+
+  function select(i){
+    var ex = EXAMPLES[i];
+    buttons.forEach(function(b, j){ b.setAttribute("aria-pressed", j === i ? "true" : "false"); });
+    q.innerHTML = 'What is <span class="subj">subject</span> <span class="rel">' + ex.rel + '</span>?';
+    window.RV_SLUG = ex.slug; if (window.PCV) PCV.setSlug(ex.slug);
+    ref.src = IMG[ex.slug][0];
+    grid.style.opacity = 0.35;
+    var next = new Image();
+    next.onload = function(){ grid.src = next.src; grid.style.opacity = 1; };
+    next.src = IMG[ex.slug][1];
+    ref.alt = 'Reference view with the subject highlighted in green, query: ' + ex.rel;
+    grid.alt = 'Predicted target masks for "' + ex.rel + '" in four target views, for each method';
+  }
+
+  EXAMPLES.forEach(function(ex, i){
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = ex.rel;
+    b.addEventListener("click", function(){ select(i); });
+    li.appendChild(b); chips.appendChild(li); buttons.push(b);
+  });
+  select(0);
+
+  /* warm the cache so switching is instant */
+  Object.keys(IMG).forEach(function(k){ IMG[k].forEach(function(s){ var im = new Image(); im.src = s; }); });
+})();
+
+
+
+
+/* ---- 3D point cloud viewer ----
+   Loads static/pointclouds/<slug>.ply for the selected example (binary or ASCII PLY with
+   x y z, red green blue, and optional "score" in [0,1] and "subject" 0/1 per vertex).
+   When no file exists for an example, a clearly labelled placeholder scene is shown. */
+var PCV = (function(){
+  var TAU = 0.3;
+  var URLS = [
+    "https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js",
+    "https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"
+  ];
+  var el = {
+    wrap: document.getElementById("pc"), canvas: document.getElementById("pccanvas"),
+    msg: document.getElementById("pcmsg"), badge: document.getElementById("pcbadge"),
+    cap: document.getElementById("pccap"), size: document.getElementById("pcsize"),
+    rot: document.getElementById("pcrot"), reset: document.getElementById("pcreset"),
+    modes: Array.prototype.slice.call(document.querySelectorAll("#pc .seg button"))
+  };
+  var st = { mode: "target", sizeMul: 1, visible: false, slug: null, loadedSlug: null, data: null, cache: {}, threeP: null, inited: false, failed: false };
+  var renderer, scene, camera, controls, points, geom, mat, raf = 0, baseSize = 0.01;
+
+  function loadScript(src){
+    return new Promise(function(res, rej){
+      var s = document.createElement("script"); s.src = src; s.async = false;
+      s.onload = res; s.onerror = function(){ rej(new Error("Could not load " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function ensureThree(){
+    if (window.THREE && THREE.OrbitControls) return Promise.resolve();
+    if (!st.threeP) st.threeP = loadScript(URLS[0]).then(function(){ return loadScript(URLS[1]); });
+    return st.threeP;
+  }
+  function message(t){ if (t) { el.msg.textContent = t; el.msg.hidden = false; } else el.msg.hidden = true; }
+
+  /* ---------- PLY parsing ---------- */
+  var TYPES = {
+    "char":["getInt8",1],"int8":["getInt8",1],"uchar":["getUint8",1],"uint8":["getUint8",1],
+    "short":["getInt16",2],"int16":["getInt16",2],"ushort":["getUint16",2],"uint16":["getUint16",2],
+    "int":["getInt32",4],"int32":["getInt32",4],"uint":["getUint32",4],"uint32":["getUint32",4],
+    "float":["getFloat32",4],"float32":["getFloat32",4],"double":["getFloat64",8],"float64":["getFloat64",8]
+  };
+  function parsePLY(buf){
+    var bytes = new Uint8Array(buf), head = "", end = -1, lim = Math.min(bytes.length, 65536);
+    for (var i = 0; i < lim; i++) {
+      head += String.fromCharCode(bytes[i]);
+      if (bytes[i] === 10 && /end_header\r?\n$/.test(head)) { end = i + 1; break; }
+    }
+    if (end < 0 || head.indexOf("ply") !== 0) throw new Error("Not a PLY file");
+    var lines = head.split(/\r?\n/), format = "", n = 0, props = [], inVertex = false, vertexFirst = null, refCam = null;
+    lines.forEach(function(l){
+      var t = l.trim().split(/\s+/);
+      if (t[0] === "comment" && t[1] === "rv_ref_camera") refCam = [parseFloat(t[2]), parseFloat(t[3]), parseFloat(t[4])];
+      if (t[0] === "format") format = t[1];
+      else if (t[0] === "element") { inVertex = t[1] === "vertex"; if (vertexFirst === null) vertexFirst = inVertex; if (inVertex) n = parseInt(t[2], 10); }
+      else if (t[0] === "property" && inVertex) {
+        if (t[1] === "list") throw new Error("List properties on vertices are not supported");
+        if (!TYPES[t[1]]) throw new Error("Unknown PLY type " + t[1]);
+        props.push({ name: t[2], type: t[1] });
+      }
+    });
+    if (!vertexFirst) throw new Error("The vertex element must come first");
+    var idx = {}; props.forEach(function(p, k){ idx[p.name] = k; });
+    function find(names){ for (var k = 0; k < names.length; k++) if (names[k] in idx) return idx[names[k]]; return -1; }
+    var ix = find(["x"]), iy = find(["y"]), iz = find(["z"]);
+    var ir = find(["red","r"]), ig = find(["green","g"]), ib = find(["blue","b"]);
+    var is = find(["score","relevance","relation","scalar_score"]), isub = find(["subject","is_subject"]);
+    var ipred = find(["is_pred","pred"]), igt = find(["is_gt","gt"]);
+    var scoreScale = is >= 0 && /^u?(char|int8)$|^uint8$/.test(props[is].type) ? 1 / 255 : 1;
+    if (ix < 0 || iy < 0 || iz < 0) throw new Error("PLY needs x, y, z");
+    var pos = new Float32Array(n * 3), rgb = new Float32Array(n * 3);
+    var score = is >= 0 ? new Float32Array(n) : null, subj = isub >= 0 ? new Uint8Array(n) : null;
+    var pred = ipred >= 0 ? new Uint8Array(n) : null, gt = igt >= 0 ? new Uint8Array(n) : null;
+    var raw = new Float64Array(props.length);
+    function store(v){
+      pos[v*3] = raw[ix]; pos[v*3+1] = raw[iy]; pos[v*3+2] = raw[iz];
+      if (ir >= 0) { rgb[v*3] = raw[ir]; rgb[v*3+1] = raw[ig]; rgb[v*3+2] = raw[ib]; }
+      else { rgb[v*3] = rgb[v*3+1] = rgb[v*3+2] = 0.7; }
+      if (score) score[v] = raw[is] * scoreScale;
+      if (subj) subj[v] = raw[isub] > 0.5 ? 1 : 0;
+      if (pred) pred[v] = raw[ipred] > 0.5 ? 1 : 0;
+      if (gt) gt[v] = raw[igt] > 0.5 ? 1 : 0;
+    }
+    if (format === "binary_little_endian" || format === "binary_big_endian") {
+      var le = format === "binary_little_endian", dv = new DataView(buf, end), off = 0;
+      var fns = props.map(function(p){ return TYPES[p.type]; });
+      for (var v = 0; v < n; v++) {
+        for (var k = 0; k < fns.length; k++) { raw[k] = dv[fns[k][0]](off, le); off += fns[k][1]; }
+        store(v);
+      }
+    } else if (format === "ascii") {
+      var body = new TextDecoder().decode(bytes.subarray(end)).split(/\r?\n/), v2 = 0;
+      for (var L = 0; L < body.length && v2 < n; L++) {
+        var tk = body[L].trim(); if (!tk) continue; tk = tk.split(/\s+/);
+        for (var k2 = 0; k2 < props.length; k2++) raw[k2] = parseFloat(tk[k2]);
+        store(v2++);
+      }
+    } else throw new Error("Unsupported PLY format " + format);
+    var cmax = 0; for (var c = 0; c < rgb.length; c++) if (rgb[c] > cmax) cmax = rgb[c];
+    if (cmax > 1.001) for (var c2 = 0; c2 < rgb.length; c2++) rgb[c2] /= 255;
+    return { n: n, pos: pos, rgb: rgb, score: score, subj: subj, pred: pred, gt: gt, refCam: refCam, demo: false };
+  }
+  function b64ToBuf(b64){ var bin = atob(b64), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a.buffer; }
+
+  /* ---------- placeholder scene (not a model output) ---------- */
+  function demoScene(){
+    var seed = 7; function rnd(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+    var P = [], C = [], S = [], B = [];
+    function j(a){ return (rnd() - 0.5) * a; }
+    function add(x, y, z, r, g, b, s, sub){ P.push(x, y, z); C.push(r, g, b); S.push(Math.max(0, Math.min(1, s))); B.push(sub ? 1 : 0); }
+    var doorX0 = -0.25, doorX1 = 0.7, doorY1 = 2.05, back = -1.5;
+    function doorDist(x, y){ var dx = Math.max(doorX0 - x, 0, x - doorX1), dy = Math.max(y - doorY1, 0); return Math.sqrt(dx*dx + dy*dy); }
+    var i, x, y, z, t;
+    for (i = 0; i < 17000; i++) {            /* wooden floor */
+      x = -2 + 4 * rnd(); z = back + 3.2 * rnd();
+      var plank = Math.floor((x + 2) / 0.16); t = 0.82 + 0.18 * Math.abs(Math.sin(plank * 12.9898)) + j(0.06);
+      add(x, j(0.006), z, 0.42 * t, 0.25 * t, 0.15 * t, 0.03 + 0.04 * rnd(), 0);
+    }
+    for (i = 0; i < 17000; i++) {            /* back wall */
+      x = -2 + 4 * rnd(); y = 2.6 * rnd();
+      if (x > doorX0 - 0.06 && x < doorX1 + 0.06 && y < doorY1 + 0.06) continue;
+      t = 0.9 + j(0.04);
+      add(x, y, back + j(0.006), 0.88 * t, 0.88 * t, 0.86 * t, 0.05 + 0.3 * Math.exp(-doorDist(x, y) * 5) + j(0.04), 0);
+    }
+    for (i = 0; i < 10000; i++) {            /* left wall */
+      z = back + 3.2 * rnd(); y = 2.6 * rnd(); t = 0.84 + j(0.04);
+      add(-2 + j(0.006), y, z, 0.86 * t, 0.86 * t, 0.84 * t, 0.03 + 0.03 * rnd(), 0);
+    }
+    for (i = 0; i < 9000; i++) {             /* door (the target) */
+      x = doorX0 + (doorX1 - doorX0) * rnd(); y = doorY1 * rnd();
+      var u = (x - doorX0) / (doorX1 - doorX0), v = y / doorY1;
+      var inset = (u > 0.14 && u < 0.86) && ((v > 0.08 && v < 0.44) || (v > 0.52 && v < 0.92));
+      var edge = inset && (Math.min(u - 0.14, 0.86 - u) < 0.025 || Math.min(Math.abs(v - 0.08), Math.abs(v - 0.44), Math.abs(v - 0.52), Math.abs(v - 0.92)) < 0.012);
+      t = (edge ? 0.8 : 0.97) + j(0.03);
+      add(x, y, back + 0.03 + (inset ? -0.008 : 0) + j(0.004), 0.93 * t, 0.94 * t, 0.96 * t, 0.86 + 0.1 * rnd(), 0);
+    }
+    for (i = 0; i < 2600; i++) {             /* door frame */
+      var side = rnd(); if (side < 0.4) { x = doorX0 - 0.06 + 0.06 * rnd(); y = doorY1 * rnd(); } else if (side < 0.8) { x = doorX1 + 0.06 * rnd(); y = doorY1 * rnd(); } else { x = doorX0 - 0.06 + (doorX1 - doorX0 + 0.12) * rnd(); y = doorY1 + 0.06 * rnd(); }
+      add(x, y, back + 0.02 + j(0.004), 0.95, 0.95, 0.94, 0.35 + j(0.1), 0);
+    }
+    for (i = 0; i < 400; i++) {              /* door knob */
+      var a = rnd() * Math.PI * 2, b = Math.acos(2 * rnd() - 1), rr = 0.035;
+      add(0.6 + rr * Math.sin(b) * Math.cos(a), 1.0 + rr * Math.cos(b), back + 0.07 + rr * Math.sin(b) * Math.sin(a), 0.55, 0.53, 0.5, 0.7, 0);
+    }
+    for (i = 0; i < 7000; i++) {             /* coat (the subject) hanging on the door */
+      y = 0.95 + 0.95 * rnd(); var w = 0.08 + 0.1 * Math.pow((1.9 - y) / 0.95, 0.6);
+      var ang = Math.PI * rnd(), cx = 0.22 + j(0.01);
+      x = cx + w * Math.cos(ang); z = back + 0.05 + 0.13 * Math.sin(ang) * (0.6 + 0.4 * (1.9 - y) / 0.95);
+      t = 0.8 + 0.25 * rnd();
+      add(x, y, z, 0.1 * t, 0.12 * t, 0.2 * t, 0, 1);
+    }
+    for (i = 0; i < 900; i++) {              /* electrical panel */
+      add(-1.2 + 0.36 * rnd(), 1.3 + 0.5 * rnd(), back + 0.02, 0.62, 0.63, 0.64, 0.08, 0);
+    }
+    function box(x0, x1, y0, y1, z0, z1, cnt, col, s){
+      var ax = x1 - x0, ay = y1 - y0, az = z1 - z0, A = [ay*az, ay*az, ax*az, ax*az, ax*ay, ax*ay], tot = A.reduce(function(p, q){ return p + q; }, 0);
+      for (var k = 0; k < cnt; k++) {
+        var r = rnd() * tot, f = 0; while (r > A[f]) { r -= A[f]; f++; }
+        var px = x0 + ax * rnd(), py = y0 + ay * rnd(), pz = z0 + az * rnd();
+        if (f === 0) px = x0; else if (f === 1) px = x1; else if (f === 2) py = y0; else if (f === 3) py = y1; else if (f === 4) pz = z0; else pz = z1;
+        var tt = 0.85 + j(0.12); add(px, py, pz, col[0] * tt, col[1] * tt, col[2] * tt, s + j(0.03), 0);
+      }
+    }
+    box(0.95, 1.85, 0.36, 0.5, -0.7, 0.15, 3200, [0.55, 0.45, 0.35], 0.05);     /* bench seat */
+    box(1.72, 1.85, 0.5, 1.05, -0.7, 0.15, 1800, [0.52, 0.42, 0.33], 0.05);     /* bench back */
+    [[1.0, -0.65], [1.0, 0.1], [1.78, -0.65], [1.78, 0.1]].forEach(function(l){ box(l[0], l[0] + 0.05, 0, 0.36, l[1], l[1] + 0.05, 180, [0.2, 0.18, 0.16], 0.04); });
+    return { n: S.length, pos: new Float32Array(P), rgb: new Float32Array(C), score: new Float32Array(S), subj: new Uint8Array(B), demo: true };
+  }
+
+  /* ---------- rendering ---------- */
+  var VIR = [[0.267,0.005,0.329],[0.231,0.322,0.545],[0.129,0.569,0.553],[0.369,0.788,0.384],[0.992,0.906,0.145]];
+  function viridis(t, out){
+    t = Math.max(0, Math.min(1, t)) * 4; var k = Math.min(3, Math.floor(t)), f = t - k;
+    for (var c = 0; c < 3; c++) out[c] = VIR[k][c] + (VIR[k+1][c] - VIR[k][c]) * f;
+  }
+  var RED = [0.94, 0.2, 0.18], GREEN = [0.13, 0.8, 0.33];
+  function colorize(){
+    var d = st.data; if (!d || !geom) return;
+    var col = geom.attributes.color.array, tmp = [0, 0, 0], mode = st.mode;
+    if (mode === "relevance" && !d.score) mode = "target";
+    if (mode === "gt" && !d.gt) mode = "target";
+    for (var i = 0; i < d.n; i++) {
+      var r = d.rgb[i*3], g = d.rgb[i*3+1], b = d.rgb[i*3+2];
+      var hit = mode === "target" ? (d.pred ? d.pred[i] : (d.score && d.score[i] >= TAU)) : mode === "gt" ? d.gt[i] : 0;
+      if (mode === "relevance") { viridis(d.score[i], tmp); r = tmp[0]; g = tmp[1]; b = tmp[2]; }
+      else if (hit) { r = r * 0.3 + RED[0] * 0.7; g = g * 0.3 + RED[1] * 0.7; b = b * 0.3 + RED[2] * 0.7; }
+      if (mode === "target" && d.subj && d.subj[i]) { r = r * 0.15 + GREEN[0] * 0.85; g = g * 0.15 + GREEN[1] * 0.85; b = b * 0.15 + GREEN[2] * 0.85; }
+      col[i*3] = r; col[i*3+1] = g; col[i*3+2] = b;
+    }
+    geom.attributes.color.needsUpdate = true;
+    caption();
+  }
+  function caption(){
+    var hint = " Drag to rotate, scroll or pinch to zoom, right-drag or two-finger drag to pan, double-click to reset.";
+    var t;
+    if (st.mode === "relevance") t = '<b>Relevance.</b> Sigmoid relevance of each point to the query, low<span class="cmap" aria-hidden="true"></span>high.';
+    else if (st.mode === "rgb") t = '<b>RGB.</b> Colored points from the Pi3 point map, without predictions.';
+    else if (st.mode === "gt") t = '<span class="dot g"></span><b>Subject</b> <span class="dot r" style="margin-left:8px"></span><b>Ground-truth target.</b> Annotated target mask lifted to 3D for comparison.';
+    else t = '<span class="dot g"></span><b>Subject</b> <span class="dot r" style="margin-left:8px"></span><b>Predicted target.</b> RelationVGGT&rsquo;s target masks from all views, lifted to 3D through the Pi3 point map.';
+    el.cap.innerHTML = t + hint;
+  }
+  function fit(){
+    var d = st.data, n = d.n, cx = 0, cy = 0, cz = 0, i;
+    for (i = 0; i < n; i++) { cx += d.pos[i*3]; cy += d.pos[i*3+1]; cz += d.pos[i*3+2]; }
+    cx /= n; cy /= n; cz /= n;
+    var step = Math.max(1, Math.floor(n / 5000)), ds = [];
+    for (i = 0; i < n; i += step) { var dx = d.pos[i*3]-cx, dy = d.pos[i*3+1]-cy, dz = d.pos[i*3+2]-cz; ds.push(Math.sqrt(dx*dx + dy*dy + dz*dz)); }
+    ds.sort(function(a, b){ return a - b; });
+    var R = ds[Math.floor(ds.length * 0.95)] || 1;
+    baseSize = R * 0.016 * Math.max(0.7, Math.min(2.2, Math.sqrt(50000 / n)));
+    points.position.set(-cx, -cy, -cz);
+    camera.near = R / 100; camera.far = R * 50; camera.updateProjectionMatrix();
+    if (d.refCam) {
+      /* start just behind and above the reference camera, looking at the scene */
+      var rx = d.refCam[0] - cx, ry = d.refCam[1] - cy, rz = d.refCam[2] - cz, L = Math.sqrt(rx*rx + ry*ry + rz*rz) || 1;
+      var k = (L + R * 0.6) / L;
+      camera.position.set(rx * k, ry * k + R * 0.25, rz * k);
+    } else camera.position.set(R * 0.35, R * 0.45, R * 2.1);
+    controls.target.set(0, 0, 0); controls.minDistance = R * 0.2; controls.maxDistance = R * 8;
+    controls.update(); controls.saveState();
+    mat.size = baseSize * st.sizeMul;
+  }
+  function show(d){
+    st.data = d;
+    if (geom) geom.dispose();
+    geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.BufferAttribute(d.pos, 3));
+    geom.setAttribute("color", new THREE.BufferAttribute(new Float32Array(d.n * 3), 3));
+    points.geometry = geom;
+    el.modes.forEach(function(b){
+      if (b.dataset.mode === "relevance") b.disabled = !d.score;
+      if (b.dataset.mode === "gt") b.disabled = !d.gt;
+    });
+    if ((st.mode === "gt" && !d.gt) || (st.mode === "relevance" && !d.score)) {
+      st.mode = "target"; el.modes.forEach(function(x){ x.setAttribute("aria-checked", x.dataset.mode === "target" ? "true" : "false"); });
+    }
+    el.badge.hidden = !d.demo;
+    fit(); colorize(); message(null);
+  }
+  function getData(slug){
+    if (st.cache[slug]) return Promise.resolve(st.cache[slug]);
+    var inline = window.RV_PC_INLINE, p;
+    if (inline) p = inline[slug] ? Promise.resolve(b64ToBuf(inline[slug])) : Promise.reject(new Error("none"));
+    else p = fetch("static/pointclouds/" + slug + ".ply").then(function(r){ if (!r.ok) throw new Error("none"); return r.arrayBuffer(); });
+    return p.then(parsePLY).catch(function(e){
+      if (e && e.message !== "none" && !/fetch|Failed|NetworkError|Load failed/i.test(e.message)) console.warn("Point cloud for " + slug + ":", e.message);
+      if (!st.cache.__demo) st.cache.__demo = demoScene();
+      return st.cache.__demo;
+    }).then(function(d){ st.cache[slug] = d; return d; });
+  }
+  function load(slug){
+    if (!st.inited || st.loadedSlug === slug) return;
+    st.loadedSlug = slug; message("Loading point cloud\u2026");
+    getData(slug).then(function(d){ if (st.loadedSlug === slug) show(d); });
+  }
+  function init(){
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (e) { st.failed = true; message("3D view needs WebGL, which this browser has turned off."); return; }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearColor(0x000000, 0);
+    el.canvas.appendChild(renderer.domElement);
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1000);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.08; controls.screenSpacePanning = true;
+    controls.autoRotate = el.rot.getAttribute("aria-pressed") === "true"; controls.autoRotateSpeed = 1.2;
+    controls.addEventListener("start", function(){ if (controls.autoRotate) setRotate(false); });
+    var dot = document.createElement("canvas"); dot.width = dot.height = 64;
+    var dc = dot.getContext("2d"); dc.fillStyle = "#fff"; dc.beginPath(); dc.arc(32, 32, 30, 0, Math.PI * 2); dc.fill();
+    mat = new THREE.PointsMaterial({ size: 0.01, vertexColors: true, sizeAttenuation: true, map: new THREE.CanvasTexture(dot), alphaTest: 0.5 });
+    points = new THREE.Points(new THREE.BufferGeometry(), mat);
+    scene.add(points);
+    renderer.domElement.addEventListener("dblclick", function(){ controls.reset(); });
+    function resize(){ var w = el.wrap.clientWidth, h = el.wrap.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(el.wrap); else window.addEventListener("resize", resize);
+    resize();
+    st.inited = true;
+    load(st.slug);
+    loop();
+  }
+  function loop(){
+    cancelAnimationFrame(raf);
+    if (!st.visible || !st.inited) return;
+    raf = requestAnimationFrame(loop);
+    controls.update(); renderer.render(scene, camera);
+  }
+  function setRotate(on){ el.rot.setAttribute("aria-pressed", on ? "true" : "false"); if (controls) controls.autoRotate = on; }
+
+  el.modes.forEach(function(b){
+    b.addEventListener("click", function(){
+      if (b.disabled) return;
+      st.mode = b.dataset.mode;
+      el.modes.forEach(function(x){ x.setAttribute("aria-checked", x === b ? "true" : "false"); });
+      colorize(); if (!st.data) caption();
+    });
+  });
+  el.size.addEventListener("input", function(){ st.sizeMul = parseFloat(el.size.value); if (mat) mat.size = baseSize * st.sizeMul; });
+  el.rot.addEventListener("click", function(){ setRotate(el.rot.getAttribute("aria-pressed") !== "true"); });
+  el.reset.addEventListener("click", function(){ if (controls) controls.reset(); });
+  caption();
+
+  return {
+    setSlug: function(slug){ st.slug = slug; if (st.visible) load(slug); },
+    setVisible: function(v){
+      st.visible = v;
+      if (!v) { cancelAnimationFrame(raf); return; }
+      if (st.failed) return;
+      if (st.inited) { load(st.slug); loop(); return; }
+      message("Loading 3D viewer\u2026");
+      ensureThree().then(init).catch(function(){ st.failed = true; message("The 3D viewer could not be loaded. Check your connection and reload the page."); });
+    }
+  };
+})();
+if (window.RV_SLUG) PCV.setSlug(window.RV_SLUG);
+
+/* ---- Result view switch (multi-view / 3D) ---- */
+(function viewSwitch(){
+  var tabs = [document.getElementById("vt-mv"), document.getElementById("vt-3d")];
+  function show(t, focus){
+    tabs.forEach(function(x){
+      var on = x === t;
+      x.setAttribute("aria-selected", on ? "true" : "false"); x.tabIndex = on ? 0 : -1;
+      document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
+    });
+    if (focus) t.focus();
+    PCV.setVisible(t.id === "vt-3d");
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener("click", function(){ show(t, false); });
+    t.addEventListener("keydown", function(e){
+      if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); show(tabs[1 - i], true); }
+    });
+  });
+})();
+
+/* ---- Light / dark toggle ---- */
+(function theme(){
+  var root = document.documentElement, btn = document.getElementById("themebtn");
+  var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function current(){
+    var t = root.getAttribute("data-theme");
+    if (t === "light" || t === "dark") return t;
+    return mq && mq.matches ? "dark" : "light";
+  }
+  function label(){ btn.setAttribute("aria-label", current() === "dark" ? "Switch to light mode" : "Switch to dark mode"); }
+  btn.addEventListener("click", function(){
+    var next = current() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("rvggt-theme", next); } catch (e) {}
+    label();
+  });
+  if (mq && mq.addEventListener) mq.addEventListener("change", label);
+  label();
+})();
+
+/* ---- Analysis tabs ---- */
+(function tabs(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+  function show(t, focus){
+    tabs.forEach(function(x){
+      var on = x === t;
+      x.setAttribute("aria-selected", on ? "true" : "false");
+      x.tabIndex = on ? 0 : -1;
+      document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
+    });
+    if (focus) t.focus();
+    try { t.scrollIntoView({block:"nearest", inline:"nearest"}); } catch(e) {}
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener("click", function(){ show(t, false); });
+    t.addEventListener("keydown", function(e){
+      var j = null;
+      if (e.key === "ArrowRight") j = (i + 1) % tabs.length;
+      if (e.key === "ArrowLeft") j = (i - 1 + tabs.length) % tabs.length;
+      if (e.key === "Home") j = 0;
+      if (e.key === "End") j = tabs.length - 1;
+      if (j !== null) { e.preventDefault(); show(tabs[j], true); }
+    });
+  });
+})();
+
+/* ---- BibTeX copy ---- */
+document.getElementById("copybtn").addEventListener("click", function(){
+  var btn = this, text = document.getElementById("bibtext").textContent;
+  function done(){ btn.textContent = "Copied"; setTimeout(function(){ btn.textContent = "Copy"; }, 1600); }
+  function fallback(){
+    var r = document.createRange(); r.selectNodeContents(document.getElementById("bibtext"));
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    try { document.execCommand("copy"); done(); } catch(e) { btn.textContent = "Press Ctrl+C"; }
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+  } catch(e) { fallback(); }
+});
+</script>
+</body>
+</html>
