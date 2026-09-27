@@ -40,8 +40,8 @@
     --rk1:#5c2626; --rk2:#5a3c1e; --rk3:#4a4419; --pc-bg:#0e1013;
 }
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
-body{margin:0;position:relative;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.65}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 76px);scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.65}
 img{max-width:100%;height:auto;display:block}
 a{color:inherit;text-decoration-color:var(--faint);text-underline-offset:3px}
 a:hover{text-decoration-color:currentColor}
@@ -51,7 +51,7 @@ a:hover{text-decoration-color:currentColor}
 .wide{max-width:1120px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px}
 
 /* Header */
-header{text-align:center;padding-top:72px;padding-bottom:28px}
+header{text-align:center;padding-top:56px;padding-bottom:28px}
 .venue{display:inline-block;font-size:18px;font-weight:700;letter-spacing:.01em;color:var(--target-ink);background:var(--target-bg);border:1px solid var(--target);border-radius:999px;padding:5px 18px;margin-bottom:22px}
 h1{font-family:var(--serif);font-weight:700;font-size:clamp(44px,8vw,76px);line-height:1;letter-spacing:-.02em;margin:0 0 14px;font-variation-settings:"opsz" 60}
 .subtitle{font-family:var(--serif);font-weight:400;font-size:clamp(20px,2.6vw,27px);line-height:1.3;margin:0 auto 30px;max-width:22em;color:var(--ink)}
@@ -153,6 +153,21 @@ u.second{text-decoration-thickness:1px;text-underline-offset:3px}
 .tab[aria-selected="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
 .panel p{font-size:16.5px}
 .panel[hidden]{display:none}
+.topnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--paper) 86%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--rule)}
+.topnav-in{max-width:1180px;margin:0 auto;padding:0 20px;height:58px;display:flex;align-items:center;gap:18px}
+.brand{font-weight:700;font-size:16.5px;text-decoration:none;color:var(--ink);letter-spacing:-.005em;margin-right:auto;white-space:nowrap}
+.navlinks{display:flex;gap:4px}
+.navlinks a{font-size:15px;color:var(--muted);text-decoration:none;padding:6px 11px;border-radius:8px;white-space:nowrap}
+.navlinks a:hover{color:var(--ink);background:var(--wash)}
+.navlinks a[aria-current="true"]{color:var(--ink);font-weight:600}
+@media (max-width:760px){
+  html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 100px)}
+  .topnav-in{height:auto;flex-wrap:wrap;padding:10px 14px 6px;gap:6px 10px}
+  .navlinks{order:3;width:100%;overflow-x:auto;scrollbar-width:none;margin:0 -6px}
+  .navlinks::-webkit-scrollbar{display:none}
+  .navlinks a{font-size:14px;padding:5px 9px}
+}
+
 .viewswitch{display:flex;flex-direction:column;gap:8px;margin-top:18px}
 .vbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;font-size:14.5px;line-height:1.3;padding:10px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
 .vbtn:hover{border-color:var(--faint)}
@@ -193,14 +208,14 @@ u.second{text-decoration-thickness:1px;text-underline-offset:3px}
 .toggle[open] summary{border-bottom:1px solid var(--rule);border-radius:10px 10px 0 0}
 .toggle-body{padding:16px 18px 18px}
 .toggle-body .vs{margin-top:12px}
-.theme-btn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:38px;height:38px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.theme-btn{flex:none;width:36px;height:36px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .theme-btn:hover{border-color:var(--faint)}
 .theme-btn svg{width:18px;height:18px}
 .theme-btn .moon{display:none}
 :root[data-theme="dark"] .theme-btn .sun{display:none}
 :root[data-theme="dark"] .theme-btn .moon{display:block}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .theme-btn .sun{display:none}:root:not([data-theme="light"]) .theme-btn .moon{display:block}}
-@media (prefers-reduced-motion:reduce){.toggle .chev{transition:none}}
+@media (prefers-reduced-motion:reduce){.toggle .chev{transition:none}html{scroll-behavior:auto}}
 
 table.ranked tr.ours td{background:none;color:inherit}
 table.ranked tr.ours td:first-child{font-weight:600}
@@ -292,12 +307,25 @@ try { var t = localStorage.getItem("rvggt-theme"); if (t === "light" || t === "d
 </head>
 <body>
 
-<button class="theme-btn" id="themebtn" type="button" aria-label="Switch between light and dark mode">
-  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
-</button>
+<nav class="topnav" aria-label="Sections">
+  <div class="topnav-in">
+    <a class="brand" href="#top">RelationVGGT</a>
+    <div class="navlinks">
+      <a href="#abstract">Abstract</a>
+      <a href="#task">Task</a>
+      <a href="#method">Method</a>
+      <a href="#data">Dataset</a>
+      <a href="#results">Results</a>
+      <a href="#bibtex">BibTeX</a>
+    </div>
+    <button class="theme-btn" id="themebtn" type="button" aria-label="Switch between light and dark mode">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+    </button>
+  </div>
+</nav>
 
-<header class="wrap" style="max-width:980px">
+<header class="wrap" id="top" style="max-width:980px">
   <div class="venue">NeurIPS 2026</div>
   <h1>RelationVGGT</h1>
   <p class="subtitle">Visual Geometry Transformers for 3D Spatial Relation Segmentation</p>
@@ -1129,6 +1157,27 @@ if (window.RV_SLUG) PCV.setSlug(window.RV_SLUG);
       if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); show(tabs[1 - i], true); }
     });
   });
+})();
+
+
+/* ---- Top nav: highlight the section in view ---- */
+(function navSpy(){
+  var links = Array.prototype.slice.call(document.querySelectorAll(".navlinks a"));
+  var map = {}; links.forEach(function(a){ map[a.getAttribute("href").slice(1)] = a; });
+  var secs = Object.keys(map).map(function(id){ return document.getElementById(id); }).filter(Boolean);
+  function update(){
+    var y = window.scrollY + 120, cur = null;
+    secs.forEach(function(s){ if (s.getBoundingClientRect().top + window.scrollY <= y) cur = s.id; });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) cur = secs[secs.length - 1].id;
+    links.forEach(function(a){ if (map[cur] === a) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+    if (map[cur] && map[cur].scrollIntoView && window.innerWidth <= 760) {
+      var bar = map[cur].parentNode, l = map[cur].offsetLeft, w = map[cur].offsetWidth;
+      if (l < bar.scrollLeft || l + w > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = l - 12;
+    }
+  }
+  var ticking = false;
+  window.addEventListener("scroll", function(){ if (!ticking) { ticking = true; requestAnimationFrame(function(){ ticking = false; update(); }); } }, { passive: true });
+  update();
 })();
 
 /* ---- Light / dark toggle ---- */
