@@ -52,7 +52,7 @@ a:hover{text-decoration-color:currentColor}
 
 /* Header */
 header{text-align:center;padding-top:72px;padding-bottom:28px}
-.venue{display:inline-block;font-size:14px;font-weight:500;letter-spacing:.01em;color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:3px 14px;margin-bottom:22px}
+.venue{display:inline-block;font-size:18px;font-weight:700;letter-spacing:.01em;color:var(--target-ink);background:var(--target-bg);border:1px solid var(--target);border-radius:999px;padding:5px 18px;margin-bottom:22px}
 h1{font-family:var(--serif);font-weight:700;font-size:clamp(44px,8vw,76px);line-height:1;letter-spacing:-.02em;margin:0 0 14px;font-variation-settings:"opsz" 60}
 .subtitle{font-family:var(--serif);font-weight:400;font-size:clamp(20px,2.6vw,27px);line-height:1.3;margin:0 auto 30px;max-width:22em;color:var(--ink)}
 .authors{font-size:18px;line-height:1.9;margin:0 auto 6px;max-width:44em}
@@ -95,7 +95,10 @@ h1{font-family:var(--serif);font-weight:700;font-size:clamp(44px,8vw,76px);line-
 .gridbox{position:relative;border-radius:6px;overflow:hidden;background:var(--wash)}
 .gridbox img{width:100%;transition:opacity .18s ease}
 .gridbox .hl{position:absolute;top:0;bottom:0;right:0;width:20%;border:3px solid var(--target);border-radius:6px;pointer-events:none}
-.lede{font-size:18.5px;line-height:1.6;text-align:center;max-width:38em;margin:34px auto 0}
+.tldr{max-width:780px;margin:36px auto 0;background:var(--wash);border:1px solid var(--rule);border-radius:10px;padding:18px 24px;display:flex;gap:18px;align-items:baseline}
+.tldr-label{flex:none;font-weight:700;font-size:15px;letter-spacing:.02em;color:var(--target-ink);background:var(--target-bg);border-radius:6px;padding:2px 9px}
+.tldr p{margin:0;font-size:17.5px;line-height:1.6}
+@media (max-width:520px){.tldr{flex-direction:column;gap:8px;padding:16px 18px}}
 
 /* Sections */
 section{padding-top:64px}
@@ -356,7 +359,7 @@ try { var t = localStorage.getItem("rvggt-theme"); if (t === "light" || t === "d
       </div>
     </div>
   </div>
-  <p class="lede">Given a subject mask in one view and a relational query such as <em>&ldquo;resting on&rdquo;</em>, RelationVGGT segments the target object in every other view without being told its category, in a single forward pass on unposed images.</p>
+  <div class="tldr"><span class="tldr-label">TL;DR</span><p>Given a subject mask in one view and a relational query such as <em>&ldquo;resting on&rdquo;</em>, RelationVGGT segments the target object in every other view without being told its category, in a single forward pass on unposed images.</p></div>
 </div>
 
 <main>
