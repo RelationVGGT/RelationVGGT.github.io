@@ -74,7 +74,10 @@ h1{font-family:var(--serif);font-weight:700;font-size:clamp(44px,8vw,76px);line-
 .btn .tag{font-size:12px;font-weight:400;opacity:.9}
 
 /* Explorer (teaser) */
-.explorer{margin-top:44px}
+.explorer{margin-top:40px}
+.intro{margin-top:40px}
+.intro .tldr{margin-top:0}
+.teaser{max-width:780px;margin:24px auto 0}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 26px;padding:0;list-style:none}
 .chip{font:inherit;font-size:14.5px;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
 .chip:hover{border-color:var(--faint)}
@@ -342,6 +345,13 @@ try { var t = localStorage.getItem("rvggt-theme"); if (t === "light" || t === "d
   <ul class="links" id="links"></ul>
 </header>
 
+<div class="wide intro">
+  <div class="tldr"><span class="tldr-label">TL;DR</span><p>Given a subject mask in one view and a relational query such as <em>&ldquo;resting on&rdquo;</em>, RelationVGGT segments the target object in every other view without being told its category, in a single forward pass on unposed images.</p></div>
+  <figure class="teaser">
+    <div class="fig"><img src="static/images/teaser.webp" alt="Task overview. A relational query (What is MASK lying on?) and a subject image with its mask condition RelationVGGT; unposed multi-view target images are the query. The output is the target, the sofa, masked in red in every target view." width="1440" height="804"></div>
+  </figure>
+</div>
+
 <div class="wide explorer" id="explorer">
   <ul class="chips" id="chips" aria-label="Choose a relation query"></ul>
   <div class="stage">
@@ -387,7 +397,6 @@ try { var t = localStorage.getItem("rvggt-theme"); if (t === "light" || t === "d
       </div>
     </div>
   </div>
-  <div class="tldr"><span class="tldr-label">TL;DR</span><p>Given a subject mask in one view and a relational query such as <em>&ldquo;resting on&rdquo;</em>, RelationVGGT segments the target object in every other view without being told its category, in a single forward pass on unposed images.</p></div>
 </div>
 
 <main>
