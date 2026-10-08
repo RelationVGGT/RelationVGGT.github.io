@@ -9,7 +9,7 @@ Static page for GitHub Pages. No build step.
 ## Updating links
 Open `index.html` and edit the `LINKS` object near the bottom:
 
-    var LINKS = { paper: "", arxiv: "", code: "", benchmark: "" };
+    var LINKS = { paper: "", code: "", benchmark: "" };
 
 An empty string shows the button as "soon"; a URL turns it into a live button.
 
