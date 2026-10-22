@@ -72,6 +72,10 @@ h1{font-family:var(--serif);font-weight:700;font-size:clamp(44px,8vw,76px);line-
 .btn.soon{background:transparent;color:var(--faint);border:1px dashed var(--faint);cursor:default}
 .btn.soon:hover{opacity:1}
 .btn .tag{font-size:12px;font-weight:400;opacity:.9}
+.links-2{margin-top:12px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--rule)}
+.btn.ghost:hover{opacity:1;border-color:var(--faint)}
+.btn .emoji{font-size:17px;line-height:1}
 
 /* Explorer (teaser) */
 .explorer{margin-top:40px}
@@ -343,6 +347,7 @@ try { var t = localStorage.getItem("rvggt-theme"); if (t === "light" || t === "d
   <p class="affils"><span><sup>1</sup>Yonsei University</span><span><sup>2</sup>NVIDIA</span></p>
 
   <ul class="links" id="links"></ul>
+  <ul class="links links-2" id="links2"></ul>
 </header>
 
 <div class="wide intro">
@@ -768,6 +773,20 @@ var LABELS = {paper:"Paper", code:"Code", benchmark:"Benchmark"};
     } else {
       li.innerHTML = '<span class="btn soon" aria-disabled="true">'+ICONS[k]+LABELS[k]+' <span class="tag">soon</span></span>';
     }
+    ul.appendChild(li);
+  });
+})();
+
+/* ---- Second row: community links ---- */
+(function renderLinks2(){
+  var EXTRA = [
+    {label:"Hugging Face", url:"https://huggingface.co/papers/2610.00970", icon:'<span class="emoji" aria-hidden="true">🤗</span>'},
+    {label:"X", url:"https://x.com/minsu_1206_/status/2113149158865641650", icon:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>'}
+  ];
+  var ul = document.getElementById("links2");
+  EXTRA.forEach(function(e){
+    var li = document.createElement("li");
+    li.innerHTML = '<a class="btn ghost" href="'+e.url+'" target="_blank" rel="noopener">'+e.icon+e.label+'</a>';
     ul.appendChild(li);
   });
 })();
